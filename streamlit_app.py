@@ -232,9 +232,9 @@ if st.button('Run'):
 					# use append_to_file instead of write_to_file to add more to the list.
 					result = top_agent.run(['Goal 1: Search for '+ str(MAX_COMPANIES)+' '+category + ' startups based in '+location+ '.\nGoal 2: Make a numbered list of the companies and make sure that you have atleast '+str(MAX_COMPANIES)+' companies in the list.\nGoal 3: Save the list as potential_companies.txt \nGoal 4: Save the list as potential_companies.txt \nGoal : Use "finish" command after writing text file.'])
 					#
-					if 'file_paths' not in st.session_state:
-						st.session_state.file_paths = []
-					st.session_state.file_paths.append('potential_companies.txt')
+					#if 'file_paths' not in st.session_state:
+					#	st.session_state.file_paths = []
+					#st.session_state.file_paths.append('potential_companies.txt')
 					#
 					# Researching each company
 					st.info('Now researching each company...')
@@ -403,7 +403,7 @@ if st.button('Run'):
 											company_row = all_lines[1]
 										company_data.append(company_row)
 									# Delete company_info.tsv
-									os.remove(company_name+'_company_info.tsv')
+									#os.remove(company_name+'_company_info.tsv')
 						#print(company_header)
 						#print(company_data)
 						# write to company_data.csv
@@ -422,8 +422,8 @@ if st.button('Run'):
 							st.session_state.file_paths = []
 						st.session_state.file_paths.append('company_data.csv')
 						#
-						df = pd.read_csv('company_data.csv')
-						st.table(df)
+						#df = pd.read_csv('company_data.csv')
+						#st.table(df)
 						#
 						# ENDS HERE
 						#

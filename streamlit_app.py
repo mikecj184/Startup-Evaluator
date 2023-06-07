@@ -292,6 +292,8 @@ if st.button('Run'):
 					# Fill missing data
 					with open('potential_companies.txt', 'r') as f:
 						potential_companies = f.read().splitlines()
+						if(len(potential_companies[0]) == 0):
+							potential_companies = potential_companies[0].split('\n')
 						# loop over potential_companies list and update company_info.tsv
 						for company in potential_companies:
 							company_name = company.split('. ')[1]

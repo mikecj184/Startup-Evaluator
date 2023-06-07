@@ -243,6 +243,8 @@ if st.button('Run'):
 					with open('potential_companies.txt', 'r') as f:
 							time.sleep(10)
 							potential_companies = f.read().splitlines()
+							if(len(potential_companies[0]) == 0):
+								potential_companies = potential_companies[0].split('\n')
 							# check number of lines in potential_companies.txt
 							numlines = len(potential_companies)
 							if(numlines >= int(MAX_COMPANIES)):

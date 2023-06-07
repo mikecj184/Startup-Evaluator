@@ -433,8 +433,8 @@ if st.button('Run'):
 							st.session_state.file_paths = []
 						st.session_state.file_paths.append('company_data.csv')
 						#
-						#df = pd.read_csv('company_data.csv')
-						#st.table(df)
+						df = pd.read_csv('company_data.csv')
+						st.table(df)
 						#
 						# ENDS HERE
 						#

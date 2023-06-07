@@ -406,15 +406,26 @@ if st.button('Run'):
 									#os.remove(company_name+'_company_info.tsv')
 						#print(company_header)
 						#print(company_data)
+						company_header = company_header.split('\t')
+						for i in range(len(company_header)):
+							company_header[i] = company_header[i].strip()
+							company_header[i] = company_header[i].replace(',', '')
+						company_header = '\t'.join(company_header)
+						# loop over company_data and remove any commas
+						for i in range(len(company_data)):
+							company_row = company_data[i]
+							company_row = company_row.split('\t')
+							for j in range(len(company_row)):
+								company_row[j] = company_row[j].strip()
+								company_row[j] = company_row[j].replace(',', '')
+							company_data[i] = '\t'.join(company_row)
 						# write to company_data.csv
 						with open('company_data.csv', 'w', newline='') as f:
 							writer = csv.writer(f)
-							company_header = '"'+company_header.replace('\t', '","')+'"'
-							company_header = company_header.split(',')
+							company_header = company_header.split('\t')
 							writer.writerow(company_header)
 							for row in company_data:
-								row = '"'+row.replace('\t', '","')+'"'
-								row = row.split(',')
+								row = row.split('\t')
 								writer.writerow(row)
 						#
 						# Add company_data to streamlit

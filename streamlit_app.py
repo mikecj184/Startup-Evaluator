@@ -1,4 +1,3 @@
-
 # import dependencies
 import streamlit as st
 # for app framework and Validations
@@ -43,15 +42,17 @@ class StreamlitOutput:
 		self.buffer += data
 		# check if data is json
 		if 'Result: ' not in data:
-			if(data[0] == '{' and data[-1] == '}'):
-				try:
-					plan = json.loads(data)["thoughts"]["plan"]
-					self.stapp.write(plan)
-					self.stapp.json(data, expanded=False)
-				except:
-					self.stapp.json(data, expanded=False)
-			else:
-				self.stapp.write(data)
+			data = data.strip()
+			if(len(data) > 2):	
+				if(data[0] == '{' and data[-1] == '}'):
+					try:
+						plan = json.loads(data)["thoughts"]["plan"]
+						self.stapp.write(plan)
+						self.stapp.json(data, expanded=False)
+					except:
+						self.stapp.json(data, expanded=False)
+				else:
+					self.stapp.write(data)
 		# if 'File written successfully to ' in data:
 		# 	match = re.search(r'File written successfully to ([\w\.-]+)\.', data)
 		# 	if match:
@@ -222,14 +223,14 @@ if st.button('Run'):
 				if check_category.__eq__("Yes") and check_location.__eq__("Yes"):
 					if os.path.isfile('potential_companies.txt'):
 						os.remove('potential_companies.txt')
-					if os.path.isfile('company_data.csv'):
-						os.remove('company_data.csv')
+					if os.path.isfile('company_data.tsv'):
+						os.remove('company_data.tsv')
 					# Prompt template for identifying top 10 startups
 					#print('VERIFIED')
 					st.write('Now identifying top '+ str(MAX_COMPANIES) +' ' + prompt)
 					# Run the agent
 					# use append_to_file instead of write_to_file to add more to the list.
-					result = top_agent.run(['Goal 1: Search for '+ str(MAX_COMPANIES)+' '+prompt+'.\nGoal 2: Make a numbered list of the companies and make sure that you have atleast '+str(MAX_COMPANIES)+' companies in the list.\nGoal 3: Save the list as potential_companies.txt \nGoal 4: Save the list as potential_companies.txt \nGoal : Use "finish" command after writing text file.'])
+					result = top_agent.run(['Goal 1: Search for '+ str(MAX_COMPANIES)+' '+category + ' startups based in '+location+ '.\nGoal 2: Make a numbered list of the companies and make sure that you have atleast '+str(MAX_COMPANIES)+' companies in the list.\nGoal 3: Save the list as potential_companies.txt \nGoal 4: Save the list as potential_companies.txt \nGoal : Use "finish" command after writing text file.'])
 					#
 					if 'file_paths' not in st.session_state:
 						st.session_state.file_paths = []
@@ -257,8 +258,8 @@ if st.button('Run'):
 								company_name = company.split('. ')[1]
 								st.subheader(company_name+':')
 								#
-								if os.path.isfile(company_name+'_company_info.csv'):
-									os.remove(company_name+'_company_info.csv')
+								if os.path.isfile(company_name+'_company_info.tsv'):
+									os.remove(company_name+'_company_info.tsv')
 								# Prompt for searching each company
 								company_template = PromptTemplate(
 										input_variables = ['company_name'],
@@ -278,35 +279,37 @@ if st.button('Run'):
 										memory=vectorstore.as_retriever()
 								)
 								company_agent.chain.verbose = False
-								result = company_agent.run(['Goal 1: I have identified '+company_name+' which shows investment potential. Use "search" command to learn about '+company_name+'. These are the details required: Name, Company website, Services offered, Industry, Market size, Fundraising round (if any), Existing investors (if any), Employee size.\nGoal 2: Convert your research into a csv format and write to file finalfile.csv with the headers: Name, Company website, Services offered, Industry, Market size, Fundraising round (if any), Existing investors (if any), Employee size.\nGoal 3: Here is an example. Research format is: Afterpay - https://www.afterpay.com/ - Buy now, pay later platform - $200B domestic retail industry - ASX-listed - Not specified - 700 employees\nAfterpay is a leading buy now, pay later platform that has seen significant growth in recent years. The company raised $300 million in debt funding in 2020 to support its expansion plans.Afterpay is a global fintech company that offers a buy now, pay later service for consumers. The company has over 16 million customers and over 98,000 merchants worldwide. Afterpay has raised over $1.5 billion in funding to date and has a valuation of over $30 billion. Existing investors include Tencent, Sequoia Capital, and Coatue Management. Csv format is: "Name", "Website", "Services offered", "Industry", "Market Size", "Fundraising round", "Existing investors"\n"Afterpay", "https://www.afterpay.com/", "Buy now, pay later platform", "domestic retail industry" ,"$200B domestic retail industry", "$300 million in debt funding in 2020", "Tencent, Sequoia Capital, and Coatue Management", "700-1000"\nGoal 4: save the csv formatted data to finalfile.csv\nGoal 5: Use "finish" command after writing to csv file.'])
+								result = company_agent.run(['Goal 1: I have identified '+company_name+' which shows investment potential. Use "search" command to learn about '+company_name+'.\nGoal 2: Convert your research into a tsv format and write to file finalfile.tsv with the headers: Name\tCompany website\tServices offered\tIndustry\tMarket size\tFundraising round (if any)\tExisting investors (if any)\tEmployee size.\nGoal 3: Here is an example. Research format is: Afterpay - https://www.afterpay.com/ - Buy now, pay later platform - $200B domestic retail industry - ASX-listed - Not specified - 700 employees\nAfterpay is a leading buy now, pay later platform that has seen significant growth in recent years. The company raised $300 million in debt funding in 2020 to support its expansion plans.Afterpay is a global fintech company that offers a buy now, pay later service for consumers. The company has over 16 million customers and over 98,000 merchants worldwide. Afterpay has raised over $1.5 billion in funding to date and has a valuation of over $30 billion. Existing investors include Tencent, Sequoia Capital, and Coatue Management. tsv format is: Name\tWebsite\tServices offered\tIndustry\tMarket Size\tFundraising round\tExisting investors\nAfterpay\thttps://www.afterpay.com/\tBuy now, pay later platform\tdomestic retail industry\t$200B domestic retail industry\t$300 million in debt funding in 2020\tTencent, Sequoia Capital, and Coatue Management\t700-1000"\nGoal 4: save the tsv formatted data to finalfile.tsv and make sure 1st line is header and second line is the required data. No additional characters allowed.\nGoal 5: Use "finish" command after writing to tsv file.'])
 								#
 								time.sleep(5)
-								if os.path.isfile('finalfile.csv'):
-									os.rename('finalfile.csv', company_name+'_company_info.csv')
+								if os.path.isfile('finalfile.tsv'):
+									os.rename('finalfile.tsv', company_name+'_company_info.tsv')
 								else:
-									st.error("Failed to save file "+company_name+"_company_info.csv")
+									st.error("Failed to save file "+company_name+"_company_info.tsv")
 								#
 					#
 					st.info('Now filling missing data... (if any)')
 					# Fill missing data
 					with open('potential_companies.txt', 'r') as f:
 						potential_companies = f.read().splitlines()
-						# loop over potential_companies list and update company_info.csv
+						# loop over potential_companies list and update company_info.tsv
 						for company in potential_companies:
 							company_name = company.split('. ')[1]
 							print(company)
-							if os.path.isfile(company_name+'_company_info.csv'):
+							if os.path.isfile(company_name+'_company_info.tsv'):
 								#
-								file = open(company_name+'_company_info.csv', 'r')
-								numlines = len(file.readlines())
-								# read and update each company_info.csv
-								with open(company_name+'_company_info.csv', 'r') as f:
-									csvFile = csv.reader(f)
+								# read and update each company_info.tsv
+								with open(company_name+'_company_info.tsv', 'r') as f:
+									all_lines = f.readlines()
+									numlines = len(all_lines)
+									if(numlines == 1):
+										all_lines = all_lines[0].split('\n')
+										numlines = len(all_lines)
 									if(numlines >= 2):
 										# Read single row
-										header_row = next(csvFile)
+										header_row = all_lines[0].split('\t')
 										# Read remaining row
-										company_row = next(csvFile)
+										company_row = all_lines[1].split('\t')
 										# index of 'Market size', 'Fundraising round (if any)', 'Existing investors (if any)' and 'Employee size'
 										industry_index = -1
 										market_size_index = -1
@@ -355,44 +358,59 @@ if st.button('Run'):
 												company_row[employee_size_index] = result
 											time.sleep(10)
 											# Write to csv file
-											with open(company_name+'_company_info.csv', 'w', newline='') as f:
-												writer = csv.writer(f)
-												writer.writerow(header_row)
-												writer.writerow(company_row)
+											with open(company_name+'_company_info.tsv', 'w') as f:
+												# convert header_row into string
+												header_row = '\t'.join(header_row)
+												# convert company_row into string
+												company_row = '\t'.join(company_row)
+												# write header_row and company_row
+												f.write(header_row)
+												f.write('\n')
+												f.write(company_row)
 											#
 										else:
 											st.error("Failed to find index of 'Market size', 'Fundraising round (if any)', 'Existing investors (if any)' and 'Employee size'")
 											print(header_row)
 								#
-						# loop over potential_companies list and merge into company_data.csv
+						# loop over potential_companies list and merge into company_data.tsv
 						company_header = []
 						company_data = []
-						# Load company_info.csv
+						# Load company_info.tsv
 						for company in potential_companies:
 							company_name = company.split('. ')[1]
 							print(company_name)
-							if os.path.isfile(company_name+'_company_info.csv'):
-								#
-								file = open(company_name+'_company_info.csv', 'r')
-								numlines = len(file.readlines())
-								# read and load each company_info.csv
-								with open(company_name+'_company_info.csv', 'r') as f:
-									csvFile = csv.reader(f)
+							if os.path.isfile(company_name+'_company_info.tsv'):
+								# read and load each company_info.tsv
+								with open(company_name+'_company_info.tsv', 'r') as f:
+									all_lines = f.readlines()
+									numlines = len(all_lines)
+									if(numlines == 1):
+										all_lines = all_lines[0].split('\n')
+										numlines = len(all_lines)
 									if(numlines >= 2):
 										# Read single row
-										header_row = next(csvFile)
+										header_row = all_lines[0]
 										if(len(company_header) == 0):
 											company_header = header_row
 										# Read remaining row
-										company_row = next(csvFile)
+										if(all_lines[1] == '\n'):
+											company_row = all_lines[2]
+										else:
+											company_row = all_lines[1]
 										company_data.append(company_row)
-									# Delete company_info.csv
-									os.remove(company_name+'_company_info.csv')
+									# Delete company_info.tsv
+									os.remove(company_name+'_company_info.tsv')
+						#print(company_header)
+						#print(company_data)
 						# write to company_data.csv
 						with open('company_data.csv', 'w', newline='') as f:
 							writer = csv.writer(f)
+							company_header = '"'+company_header.replace('\t', '","')+'"'
+							company_header = company_header.split(',')
 							writer.writerow(company_header)
 							for row in company_data:
+								row = '"'+row.replace('\t', '","')+'"'
+								row = row.split(',')
 								writer.writerow(row)
 						#
 						# Add company_data to streamlit
@@ -400,8 +418,8 @@ if st.button('Run'):
 							st.session_state.file_paths = []
 						st.session_state.file_paths.append('company_data.csv')
 						#
-						#df = pd.read_csv('company_data.csv')
-						#st.table(df)
+						df = pd.read_csv('company_data.csv')
+						st.table(df)
 						#
 						# ENDS HERE
 						#
@@ -411,7 +429,7 @@ if st.button('Run'):
 				st.write("Please enter a valid prompt")
 			#
 		st.session_state.model_output = output.buffer
-		#st.session_state.result = result
+		st.session_state.result = result
 		load_files()
 		st.session_state.files_loaded = True
 		# If any of the download buttons was clicked, re-render them
@@ -422,6 +440,6 @@ if st.button('Run'):
 					load_files()
 		# Display the model output if it's in the session state
 		if 'model_output' in st.session_state:
-			st.write(f"Result: {st.session_state.result}")
+			#st.write(f"Result: {st.session_state.result}")
 			expander = st.expander("Model Output")
 			expander.text(st.session_state.model_output)

@@ -382,7 +382,7 @@ if st.button('Run'):
 						# Load company_info.tsv
 						for company in potential_companies:
 							company_name = company.split('. ')[1]
-							print(company_name)
+							#print(company_name)
 							if os.path.isfile(company_name+'_company_info.tsv'):
 								# read and load each company_info.tsv
 								with open(company_name+'_company_info.tsv', 'r') as f:

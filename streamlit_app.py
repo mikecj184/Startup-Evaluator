@@ -19,6 +19,9 @@ from langchain.chat_models import ChatOpenAI
 # For search 
 from langchain.llms import OpenAI
 from langchain.agents import load_tools, initialize_agent
+# For example selection
+from langchain.prompts.example_selector import SemanticSimilarityExampleSelector
+from langchain.prompts import FewShotPromptTemplate
 #
 import faiss
 from contextlib import redirect_stdout
@@ -438,6 +441,140 @@ if st.button('Run'):
 						#
 						# ENDS HERE
 						#
+						st.info('Evaluating each company...')
+						###
+						# Evaluate market size
+						###
+						st.write('Market size')
+						market_example_prompt = PromptTemplate(
+								input_variables=["input", "output"],
+								template="Example Input: {input}\nExample Output: {output}",
+						)
+						# Examples input market size and ratings
+						market_examples = [
+								{"input": "Bloomberg in the financial information space is worth approx USD 22500 million", "output": "8 of 10"},
+								{"input": "Worldwide freelancing & local services market is around $40 million", "output": "4 of 10"},
+								{"input": "Law Services in Australia amount to USD 23 billion", "output": "6 of 10"},
+						]
+						# SemanticSimilarityExampleSelector will select examples that are similar to your input by semantic meaning
+						market_example_selector = SemanticSimilarityExampleSelector.from_examples(
+								# This is the list of examples available to select from.
+								market_examples, 
+								# This is the embedding class used to produce embeddings which are used to measure semantic similarity.
+								OpenAIEmbeddings(openai_api_key=open_ai_key), 
+								# This is the VectorStore class that is used to store the embeddings and do a similarity search over.
+								FAISS,
+								# This is the number of examples to produce.
+								k=3
+						)
+						market_similar_prompt = FewShotPromptTemplate(
+								# The object that will help select examples
+								example_selector=market_example_selector,
+								# Your prompt
+								example_prompt=market_example_prompt,
+								# Customizations that will be added to the top and bottom of your prompt
+								prefix="Give the Market size and rate it out of 10.",
+								suffix="Input: {input}\nOutput:",
+								# What inputs your prompt will receive
+								input_variables=["input"],
+						)
+						market_llm = OpenAI(model_name="text-davinci-003", openai_api_key=open_ai_key)
+						market_inputs = df.loc[:, 'Market size'].values
+						market_outputs = []
+						for market_input in market_inputs:
+							market_outputs.append(market_llm(market_similar_prompt.format(input=market_input)))
+						df['Market Strength'] = market_outputs
+						###
+						# Evaluate fundraising round
+						###
+						st.write('Fundraising round')
+						fund_example_prompt = PromptTemplate(
+								input_variables=["input", "output"],
+								template="Example Input: {input}\nExample Output: {output}",
+						)
+						# Examples input market size and ratings
+						fund_examples = [
+								{"input": "Simply has raised a total of $2.34 million in 3 rounds", "output": "7 of 10"},
+								{"input": "LawPath has $1.74M in funding", "output": "6 of 10"},
+								{"input": "USD 24.71 million in 4 Rounds from 7 Investors.", "output": "8 of 10"},
+						]
+						# SemanticSimilarityExampleSelector will select examples that are similar to your input by semantic meaning
+						fund_example_selector = SemanticSimilarityExampleSelector.from_examples(
+								# This is the list of examples available to select from.
+								fund_examples, 
+								# This is the embedding class used to produce embeddings which are used to measure semantic similarity.
+								OpenAIEmbeddings(openai_api_key=open_ai_key), 
+								# This is the VectorStore class that is used to store the embeddings and do a similarity search over.
+								FAISS,
+								# This is the number of examples to produce.
+								k=3
+						)
+						fund_similar_prompt = FewShotPromptTemplate(
+								# The object that will help select examples
+								example_selector=fund_example_selector,
+								# Your prompt
+								example_prompt=fund_example_prompt,
+								# Customizations that will be added to the top and bottom of your prompt
+								prefix="Give the fundrasing round data and rate it out of 10.",
+								suffix="Input: {input}\nOutput:",
+								# What inputs your prompt will receive
+								input_variables=["input"],
+						)
+						fund_llm = OpenAI(model_name="text-davinci-003", openai_api_key=open_ai_key)
+						fund_inputs = df.loc[:, 'Fundraising round (if any)'].values
+						fund_outputs = []
+						for fund_input in fund_inputs:
+							fund_outputs.append(fund_llm(fund_similar_prompt.format(input=fund_input)))
+						df['Fundraising Strength'] = fund_outputs
+						###
+						# Evaluate team size
+						###
+						st.write('Team size')
+						team_example_prompt = PromptTemplate(
+								input_variables=["input", "output"],
+								template="Example Input: {input}\nExample Output: {output}",
+						)
+						# Examples input market size and ratings
+						team_examples = [
+								{"input": "1 - 10 employees", "output": "6 of 10"},
+								{"input": "11-50", "output": "5 of 10"},
+								{"input": "Airtasker has 50-100 employees", "output": "4 of 10"},
+						]
+						# SemanticSimilarityExampleSelector will select examples that are similar to your input by semantic meaning
+						team_example_selector = SemanticSimilarityExampleSelector.from_examples(
+								# This is the list of examples available to select from.
+								team_examples, 
+								# This is the embedding class used to produce embeddings which are used to measure semantic similarity.
+								OpenAIEmbeddings(openai_api_key=open_ai_key), 
+								# This is the VectorStore class that is used to store the embeddings and do a similarity search over.
+								FAISS,
+								# This is the number of examples to produce.
+								k=3
+						)
+						team_similar_prompt = FewShotPromptTemplate(
+								# The object that will help select examples
+								example_selector=team_example_selector,
+								# Your prompt
+								example_prompt=team_example_prompt,
+								# Customizations that will be added to the top and bottom of your prompt
+								prefix="Give the Employee size data and rate it out of 10.",
+								suffix="Input: {input}\nOutput:",
+								# What inputs your prompt will receive
+								input_variables=["input"],
+						)
+						team_llm = OpenAI(model_name="text-davinci-003", openai_api_key=open_ai_key)
+						team_inputs = df.loc[:, 'Employee size'].values
+						team_outputs = []
+						for team_input in team_inputs:
+							team_outputs.append(team_llm(team_similar_prompt.format(input=team_input)))
+						df['Team Strength'] = team_outputs
+						#
+						# drop rest of the columns
+						#
+						df = df.loc[:, ['Name','Market Strength', 'Fundraising Strength', 'Team Strength']]
+						st.table(df)
+						#
+						st.write("Download the results")
 				else:
 					st.write("Please enter a valid startup category and location")
 			else:
